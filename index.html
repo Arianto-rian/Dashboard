@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinyal — Dashboard Admin PPOB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220;
+    --bg-panel:#101A2C;
+    --bg-panel-2:#0D1626;
+    --border:#1E2C45;
+    --text:#E8EDF5;
+    --text-dim:#8C9BB5;
+    --text-dimmer:#5D6E8C;
+    --signal:#00D9C0;
+    --signal-dim:#00D9C022;
+    --amber:#F5A623;
+    --amber-dim:#F5A62322;
+    --red:#FF6B6B;
+    --red-dim:#FF6B6B22;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--signal-dim); color:var(--signal);}
+
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  /* --- Signal bars signature element --- */
+  .signal-mark{display:inline-flex; align-items:flex-end; gap:2.5px; height:16px;}
+  .signal-mark span{width:3.5px; background:var(--signal); border-radius:1px; display:block;}
+  .signal-mark span:nth-child(1){height:35%;}
+  .signal-mark span:nth-child(2){height:60%;}
+  .signal-mark span:nth-child(3){height:80%;}
+  .signal-mark span:nth-child(4){height:100%;}
+  .signal-mark.dim span{background:var(--text-dimmer);}
+  .signal-mark.small span{width:2.5px;}
+  .signal-mark.small{height:11px;}
+
+  @keyframes pulse-bar{
+    0%,100%{opacity:1;}
+    50%{opacity:.35;}
+  }
+  .signal-mark.live span:nth-child(4){animation:pulse-bar 1.6s ease-in-out infinite;}
+  .signal-mark.live span:nth-child(3){animation:pulse-bar 1.6s ease-in-out infinite .15s;}
+
+  /* ---- Login Screen ---- */
+  #login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background:
+      radial-gradient(circle at 15% 20%, #0F1E33 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, #0F2A28 0%, transparent 45%),
+      var(--bg);
+  }
+  .login-card{
+    width:100%; max-width:380px;
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:36px 30px;
+  }
+  .login-brand{display:flex; align-items:center; gap:10px; margin-bottom:28px;}
+  .login-brand .signal-mark{height:20px;}
+  .login-brand .signal-mark span{width:4.5px;}
+  .login-brand-name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; letter-spacing:-0.02em;}
+  .login-sub{color:var(--text-dim); font-size:13px; margin-bottom:28px; line-height:1.5;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-weight:500;}
+  .field input{
+    width:100%; background:var(--bg-panel-2); border:1px solid var(--border);
+    border-radius:8px; padding:11px 12px; color:var(--text); font-size:14px;
+    font-family:'Inter',sans-serif;
+  }
+  .field input:focus{outline:none; border-color:var(--signal);}
+  .btn-primary{
+    width:100%; background:var(--signal); color:#04231F; border:none;
+    border-radius:8px; padding:12px; font-weight:600; font-size:14px;
+    cursor:pointer; margin-top:8px; font-family:'Inter',sans-serif;
+    transition:opacity .15s;
+  }
+  .btn-primary:hover{opacity:.88;}
+  .login-hint{margin-top:18px; font-size:12px; color:var(--text-dimmer); text-align:center;}
+
+  /* ---- App Shell ---- */
+  #app-screen{display:none; min-height:100vh;}
+  .shell{display:grid; grid-template-columns:230px 1fr; min-height:100vh;}
+  @media (max-width:860px){ .shell{grid-template-columns:1fr;} .sidebar{display:none;} .mobile-nav{display:flex;} }
+
+  .sidebar{
+    background:var(--bg-panel); border-right:1px solid var(--border);
+    padding:22px 16px; display:flex; flex-direction:column; gap:4px;
+  }
+  .sidebar-brand{display:flex; align-items:center; gap:9px; padding:6px 10px 26px 10px;}
+  .sidebar-brand-name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px;}
+  .nav-item{
+    display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:9px;
+    color:var(--text-dim); font-size:13.5px; font-weight:500; cursor:pointer;
+    transition:background .12s, color .12s;
+  }
+  .nav-item:hover{background:var(--bg-panel-2); color:var(--text);}
+  .nav-item.active{background:var(--signal-dim); color:var(--signal);}
+  .nav-icon{width:16px; text-align:center; font-size:14px;}
+  .sidebar-footer{margin-top:auto; padding:12px 10px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-dimmer);}
+
+  .mobile-nav{
+    display:none; position:fixed; bottom:0; left:0; right:0; background:var(--bg-panel);
+    border-top:1px solid var(--border); padding:10px 8px; justify-content:space-around; z-index:50;
+  }
+  .mobile-nav .nav-item{flex-direction:column; gap:3px; font-size:10.5px; padding:6px 8px;}
+
+  .main{padding:26px 30px 90px 30px;}
+  @media (max-width:860px){ .main{padding:20px 16px 90px 16px;} }
+
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:14px;}
+  .page-title{font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; letter-spacing:-0.01em;}
+  .page-sub{color:var(--text-dim); font-size:13px; margin-top:4px;}
+  .status-pill{
+    display:inline-flex; align-items:center; gap:7px; background:var(--bg-panel);
+    border:1px solid var(--border); padding:7px 13px; border-radius:20px; font-size:12px; color:var(--text-dim);
+  }
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--signal);}
+
+  /* Stat cards */
+  .stats-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px;}
+  @media (max-width:960px){ .stats-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:520px){ .stats-grid{grid-template-columns:1fr;} }
+  .stat-card{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px;
+  }
+  .stat-label{font-size:12px; color:var(--text-dim); display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+  .stat-value{font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700;}
+  .stat-delta{font-size:11.5px; margin-top:6px; color:var(--signal);}
+  .stat-delta.down{color:var(--red);}
+
+  .panel{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px; margin-bottom:20px;
+  }
+  .panel-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+  .panel-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px;}
+  .link-sm{font-size:12px; color:var(--signal); cursor:pointer; text-decoration:none;}
+
+  /* Product grid — voucher style */
+  .products-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+  .product-card{
+    background:var(--bg-panel-2); border:1px solid var(--border); border-radius:11px;
+    padding:14px; position:relative; overflow:hidden;
+  }
+  .product-card::before{
+    content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--amber);
+  }
+  .product-op{font-size:11px; color:var(--text-dimmer); text-transform:uppercase; letter-spacing:.04em;}
+  .product-nom{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; margin:6px 0 4px 0;}
+  .product-price{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--amber);}
+  .product-stock{margin-top:10px; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim);}
+
+  /* Transaction table */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{
+    text-align:left; padding:9px 12px; color:var(--text-dimmer); font-weight:500; font-size:11px;
+    text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--border);
+  }
+  td{padding:12px; border-bottom:1px solid var(--border); color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  .trx-id{font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:12px;}
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:20px; font-size:11px; font-weight:500;
+  }
+  .badge.success{background:var(--signal-dim); color:var(--signal);}
+  .badge.pending{background:var(--amber-dim); color:var(--amber);}
+  .badge.failed{background:var(--red-dim); color:var(--red);}
+  .amt{font-family:'JetBrains Mono',monospace;}
+
+  .settings-row{display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--border);}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-label{font-size:13.5px; font-weight:500;}
+  .settings-desc{font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .key-box{
+    font-family:'JetBrains Mono',monospace; background:var(--bg-panel-2); border:1px solid var(--border);
+    border-radius:8px; padding:9px 12px; font-size:12.5px; color:var(--text-dim); display:flex; justify-content:space-between; align-items:center; gap:10px;
+  }
+  .empty-note{color:var(--text-dimmer); font-size:12px; margin-top:8px; line-height:1.6;}
+
+  .page{display:none;}
+  .page.active{display:block;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="signal-mark"><span></span><span></span><span></span><span></span></span>
+      <span class="login-brand-name">Sinyal</span>
+    </div>
+    <div class="login-sub">Masuk ke dashboard admin untuk mengelola produk pulsa, transaksi, dan koneksi penyedia.</div>
+    <div class="field">
+      <label>Email admin</label>
+      <input type="email" id="login-email" placeholder="admin@tokokamu.com" value="admin@tokokamu.com">
+    </div>
+    <div class="field">
+      <label>Kata sandi</label>
+      <input type="password" id="login-pass" placeholder="••••••••" value="••••••••">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Masuk ke Dashboard</button>
+    <div class="login-hint">Data pada dashboard ini masih contoh — belum tersambung ke Digiflazz.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="shell">
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <span class="signal-mark"><span></span><span></span><span></span><span></span></span>
+        <span class="sidebar-brand-name">Sinyal</span>
+      </div>
+      <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard')"><span class="nav-icon">◧</span> Dashboard</div>
+      <div class="nav-item" data-page="produk" onclick="goPage('produk')"><span class="nav-icon">▤</span> Produk Pulsa</div>
+      <div class="nav-item" data-page="transaksi" onclick="goPage('transaksi')"><span class="nav-icon">↻</span> Transaksi</div>
+      <div class="nav-item" data-page="pengaturan" onclick="goPage('pengaturan')"><span class="nav-icon">⚙</span> Pengaturan</div>
+      <div class="sidebar-footer">Sinyal Admin v0.1<br>Mode contoh (belum live)</div>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="page-title" id="page-title">Dashboard</div>
+          <div class="page-sub" id="page-sub">Ringkasan aktivitas hari ini</div>
+        </div>
+        <div class="status-pill"><span class="dot"></span> Server aktif — mode contoh</div>
+      </div>
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Saldo Deposit <span class="signal-mark small dim"><span></span><span></span><span></span><span></span></span></div>
+            <div class="stat-value mono">Rp 2.450.000</div>
+            <div class="stat-delta">Cukup untuk ± 245 transaksi</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Transaksi Hari Ini</div>
+            <div class="stat-value">37</div>
+            <div class="stat-delta">+12% dari kemarin</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tingkat Sukses</div>
+            <div class="stat-value">98,6%</div>
+            <div class="stat-delta">32 sukses · 0 gagal · 5 pending</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pengguna Terdaftar</div>
+            <div class="stat-value">214</div>
+            <div class="stat-delta">+6 pengguna baru</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Transaksi Terbaru</div>
+            <span class="link-sm" onclick="goPage('transaksi')">Lihat semua →</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID Transaksi</th><th>Nomor Tujuan</th><th>Produk</th><th>Nominal</th><th>Status</th></tr></thead>
+              <tbody id="trx-preview-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUK PAGE -->
+      <div class="page" id="page-produk">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Daftar Produk Pulsa</div>
+            <span class="link-sm">+ Tambah produk</span>
+          </div>
+          <div class="products-grid" id="products-grid"></div>
+        </div>
+      </div>
+
+      <!-- TRANSAKSI PAGE -->
+      <div class="page" id="page-transaksi">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Riwayat Transaksi</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID Transaksi</th><th>Nomor Tujuan</th><th>Produk</th><th>Nominal</th><th>Waktu</th><th>Status</th></tr></thead>
+              <tbody id="trx-full-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENGATURAN PAGE -->
+      <div class="page" id="page-pengaturan">
+        <div class="panel">
+          <div class="panel-title" style="margin-bottom:16px;">Koneksi Penyedia (Digiflazz)</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Username Digiflazz</div>
+              <div class="settings-desc">Digunakan untuk autentikasi permintaan ke server Digiflazz</div>
+            </div>
+            <div class="key-box">tokokamu_admin</div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">API Key</div>
+              <div class="settings-desc">Belum diisi — menunggu verifikasi akun Digiflazz selesai</div>
+            </div>
+            <div class="key-box">••••••••••••••••</div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Mode Transaksi</div>
+              <div class="settings-desc">Sandbox digunakan selama proses pengajuan & pengujian</div>
+            </div>
+            <div class="key-box">Sandbox</div>
+          </div>
+          <div class="empty-note">Setelah verifikasi Digiflazz disetujui, kolom API Key di atas akan diisi dan mode transaksi diubah ke Production dari sisi server.</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title" style="margin-bottom:16px;">Akun Admin</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Nama Toko</div>
+              <div class="settings-desc">Ditampilkan pada aplikasi pengguna</div>
+            </div>
+            <div class="key-box">Toko Kamu</div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Email Admin</div>
+            </div>
+            <div class="key-box">admin@tokokamu.com</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="mobile-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard')"><span class="nav-icon">◧</span>Dashboard</div>
+    <div class="nav-item" data-page="produk" onclick="goPage('produk')"><span class="nav-icon">▤</span>Produk</div>
+    <div class="nav-item" data-page="transaksi" onclick="goPage('transaksi')"><span class="nav-icon">↻</span>Transaksi</div>
+    <div class="nav-item" data-page="pengaturan" onclick="goPage('pengaturan')"><span class="nav-icon">⚙</span>Atur</div>
+  </div>
+</div>
+
+<script>
+function doLogin(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+}
+
+const titles = {
+  dashboard:['Dashboard','Ringkasan aktivitas hari ini'],
+  produk:['Produk Pulsa','Kelola nominal dan harga jual'],
+  transaksi:['Transaksi','Seluruh riwayat transaksi pengguna'],
+  pengaturan:['Pengaturan','Koneksi penyedia dan data toko']
+};
+
+function goPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active', el.dataset.page===p));
+  document.getElementById('page-title').textContent = titles[p][0];
+  document.getElementById('page-sub').textContent = titles[p][1];
+  window.scrollTo(0,0);
+}
+
+const products = [
+  {op:'Telkomsel', nom:'Rp 5.000', price:'Rp 6.100', stock:'Tersedia'},
+  {op:'Telkomsel', nom:'Rp 10.000', price:'Rp 11.200', stock:'Tersedia'},
+  {op:'Telkomsel', nom:'Rp 25.000', price:'Rp 26.500', stock:'Tersedia'},
+  {op:'Indosat', nom:'Rp 5.000', price:'Rp 6.000', stock:'Tersedia'},
+  {op:'Indosat', nom:'Rp 20.000', price:'Rp 21.300', stock:'Tersedia'},
+  {op:'XL Axiata', nom:'Rp 10.000', price:'Rp 11.100', stock:'Tersedia'},
+  {op:'XL Axiata', nom:'Rp 50.000', price:'Rp 51.800', stock:'Terbatas'},
+  {op:'Tri', nom:'Rp 10.000', price:'Rp 10.900', stock:'Tersedia'},
+  {op:'Smartfren', nom:'Rp 15.000', price:'Rp 16.200', stock:'Tersedia'},
+  {op:'Axis', nom:'Rp 25.000', price:'Rp 26.400', stock:'Tersedia'},
+];
+
+function renderProducts(){
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = products.map(p=>`
+    <div class="product-card">
+      <div class="product-op">${p.op}</div>
+      <div class="product-nom">${p.nom}</div>
+      <div class="product-price mono">${p.price}</div>
+      <div class="product-stock"><span class="signal-mark small"><span></span><span></span><span></span><span></span></span>${p.stock}</div>
+    </div>
+  `).join('');
+}
+
+const trx = [
+  {id:'TRX-88213', no:'0812-9981-2231', produk:'Telkomsel 25.000', nominal:'Rp 26.500', waktu:'14:32', status:'success'},
+  {id:'TRX-88212', no:'0821-4471-9982', produk:'Indosat 20.000', nominal:'Rp 21.300', waktu:'14:20', status:'success'},
+  {id:'TRX-88211', no:'0813-2201-7742', produk:'XL Axiata 50.000', nominal:'Rp 51.800', waktu:'14:05', status:'pending'},
+  {id:'TRX-88210', no:'0857-3321-0098', produk:'Tri 10.000', nominal:'Rp 10.900', waktu:'13:58', status:'success'},
+  {id:'TRX-88209', no:'0898-1120-4456', produk:'Smartfren 15.000', nominal:'Rp 16.200', waktu:'13:41', status:'failed'},
+  {id:'TRX-88208', no:'0812-7743-1290', produk:'Telkomsel 10.000', nominal:'Rp 11.200', waktu:'13:30', status:'success'},
+  {id:'TRX-88207', no:'0838-9910-2287', produk:'Axis 25.000', nominal:'Rp 26.400', waktu:'13:12', status:'success'},
+];
+
+function badge(s){
+  const map = {success:['success','Berhasil'], pending:['pending','Diproses'], failed:['failed','Gagal']};
+  const [cls,label] = map[s];
+  return `<span class="badge ${cls}"><span class="signal-mark small dim" style="height:8px"><span></span><span></span><span></span><span></span></span>${label}</span>`;
+}
+
+function renderTrx(){
+  document.getElementById('trx-preview-body').innerHTML = trx.slice(0,5).map(t=>`
+    <tr>
+      <td class="trx-id">${t.id}</td>
+      <td>${t.no}</td>
+      <td>${t.produk}</td>
+      <td class="amt">${t.nominal}</td>
+      <td>${badge(t.status)}</td>
+    </tr>`).join('');
+
+  document.getElementById('trx-full-body').innerHTML = trx.map(t=>`
+    <tr>
+      <td class="trx-id">${t.id}</td>
+      <td>${t.no}</td>
+      <td>${t.produk}</td>
+      <td class="amt">${t.nominal}</td>
+      <td>${t.waktu}</td>
+      <td>${badge(t.status)}</td>
+    </tr>`).join('');
+}
+
+renderProducts();
+renderTrx();
+</script>
+</body>
+</html>
